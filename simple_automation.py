@@ -133,116 +133,140 @@ def run_simple_automation(playwright: Playwright) -> None:
         page.wait_for_selector("article[data-key]", timeout=15000)
         print("✅ Filtro aplicado: Galletitas")
 
-        # Usar Locator para evitar problemas de elementos "detached"
-        items_locator = page.locator("article[data-key]")
-        items_count = items_locator.count()
-        print(f"🔎 Se encontraron {items_count} productos.")
-
         productos: list[dict[str, str]] = []
 
-        for idx in range(items_count):
-            try:
-                print(f"➡️  Procesando producto {idx + 1}/{items_count}")
-                article_nth = items_locator.nth(idx)
-                # Click en el card interno (zona clickeable)
-                clickable = article_nth.locator("div.vademecum-item-card")
-                # Asegurar visibilidad antes del click
-                clickable.scroll_into_view_if_needed()
-                clickable.click()
+        page_num = 1
+        while True:
+            print(f"📄 Procesando página {page_num}...")
 
-                # Esperar a que el modal visible aparezca
-                page.wait_for_selector("div.modal.show", state="visible", timeout=12000)
-                modal = page.locator("div.modal.show").first
+            # Usar Locator para evitar problemas de elementos "detached"
+            items_locator = page.locator("article[data-key]")
+            items_count = items_locator.count()
+            print(f"🔎 Se encontraron {items_count} productos en la página {page_num}.")
 
-                # Extraer datos del modal visible
-                titulo = ""
-                titulo_loc = modal.locator("h5.modal-title")
-                if titulo_loc.count() > 0:
-                    titulo = titulo_loc.first.inner_text()
-
-                descripcion = ""
-                desc_loc = modal.locator("#vademecum-item-content p")
-                if desc_loc.count() > 0:
-                    descripcion = desc_loc.first.inner_text()
-
-                # Imagen
-                imagen = ""
-                img_loc = modal.locator(".vademecuum-modal-img")
-                if img_loc.count() > 0:
-                    imagen = img_loc.first.get_attribute("src") or ""
-
-                # Ingredientes: buscar el <p> que contiene 'INGREDIENTES:'
-                ingredientes = ""
-                for p in modal.locator("p").all():
-                    txt = p.inner_text()
-                    if "INGREDIENTES:" in txt:
-                        ingredientes = txt
-                        break
-
-                # Fecha de actualización
-                fecha = ""
-                for p in modal.locator("p").all():
-                    txt = p.inner_text()
-                    if "Actualizado:" in txt:
-                        fecha = txt.replace("Actualizado:", "").strip()
-                        break
-
-                # Fuente
-                fuente = ""
-                for p in modal.locator("p").all():
-                    txt = p.inner_text()
-                    if "Fuente:" in txt:
-                        fuente = txt.replace("Fuente:", "").strip()
-                        break
-
-                # Tabla nutricional: obtener el HTML completo (outerHTML) y almacenarlo tal cual
-                tabla = ""
-                tabla_loc = modal.locator("table").first
-                if tabla_loc and tabla_loc.count() > 0:
-                    try:
-                        # outerHTML para conservar la etiqueta <table> también
-                        tabla = tabla_loc.evaluate("el => el.outerHTML")
-                    except Exception:
-                        # Fallback a inner_html
-                        try:
-                            tabla = tabla_loc.inner_html()
-                        except Exception:
-                            tabla = ""
-
-                productos.append(
-                    {
-                        "titulo": titulo,
-                        "descripcion": descripcion,
-                        "imagen": imagen,
-                        "ingredientes": ingredientes,
-                        "fecha": fecha,
-                        "fuente": fuente,
-                        "tabla_nutricional": tabla,
-                        # Guardar el HTML completo del modal para parseo posterior
-                        "modal_html": modal.evaluate("el => el.outerHTML")
-                        if modal
-                        else "",
-                    }
-                )
-
-                # Cerrar el modal
-                close_btn = modal.locator("button.btn-close")
-                if close_btn.count() > 0:
-                    close_btn.first.click()
-                else:
-                    # Alternativa: presionar Escape
-                    page.keyboard.press("Escape")
-                # Esperar a que el modal desaparezca para evitar overlay sobre siguientes clicks
-                page.wait_for_selector("div.modal.show", state="hidden", timeout=8000)
-                time.sleep(0.3)
-            except Exception as e:
-                print(f"⚠️  Error procesando producto {idx + 1}: {e}")
-                # Intentar cerrar modal si quedó abierto
+            for idx in range(items_count):
                 try:
-                    page.keyboard.press("Escape")
-                except Exception:
-                    pass
-                time.sleep(0.5)
+                    print(
+                        f"➡️  Procesando producto {idx + 1}/{items_count} en página {page_num}"
+                    )
+                    article_nth = items_locator.nth(idx)
+                    # Click en el card interno (zona clickeable)
+                    clickable = article_nth.locator("div.vademecum-item-card")
+                    # Asegurar visibilidad antes del click
+                    clickable.scroll_into_view_if_needed()
+                    clickable.click()
+
+                    # Esperar a que el modal visible aparezca
+                    page.wait_for_selector(
+                        "div.modal.show", state="visible", timeout=12000
+                    )
+                    modal = page.locator("div.modal.show").first
+
+                    # Extraer datos del modal visible
+                    titulo = ""
+                    titulo_loc = modal.locator("h5.modal-title")
+                    if titulo_loc.count() > 0:
+                        titulo = titulo_loc.first.inner_text()
+
+                    descripcion = ""
+                    desc_loc = modal.locator("#vademecum-item-content p")
+                    if desc_loc.count() > 0:
+                        descripcion = desc_loc.first.inner_text()
+
+                    # Imagen
+                    imagen = ""
+                    img_loc = modal.locator(".vademecuum-modal-img")
+                    if img_loc.count() > 0:
+                        imagen = img_loc.first.get_attribute("src") or ""
+
+                    # Ingredientes: buscar el <p> que contiene 'INGREDIENTES:'
+                    ingredientes = ""
+                    for p in modal.locator("p").all():
+                        txt = p.inner_text()
+                        if "INGREDIENTES:" in txt:
+                            ingredientes = txt
+                            break
+
+                    # Fecha de actualización
+                    fecha = ""
+                    for p in modal.locator("p").all():
+                        txt = p.inner_text()
+                        if "Actualizado:" in txt:
+                            fecha = txt.replace("Actualizado:", "").strip()
+                            break
+
+                    # Fuente
+                    fuente = ""
+                    for p in modal.locator("p").all():
+                        txt = p.inner_text()
+                        if "Fuente:" in txt:
+                            fuente = txt.replace("Fuente:", "").strip()
+                            break
+
+                    # Tabla nutricional: obtener el HTML completo (outerHTML) y almacenarlo tal cual
+                    tabla = ""
+                    tabla_loc = modal.locator("table").first
+                    if tabla_loc and tabla_loc.count() > 0:
+                        try:
+                            # outerHTML para conservar la etiqueta <table> también
+                            tabla = tabla_loc.evaluate("el => el.outerHTML")
+                        except Exception:
+                            # Fallback a inner_html
+                            try:
+                                tabla = tabla_loc.inner_html()
+                            except Exception:
+                                tabla = ""
+
+                    productos.append(
+                        {
+                            "titulo": titulo,
+                            "descripcion": descripcion,
+                            "imagen": imagen,
+                            "ingredientes": ingredientes,
+                            "fecha": fecha,
+                            "fuente": fuente,
+                            "tabla_nutricional": tabla,
+                            # Guardar el HTML completo del modal para parseo posterior
+                            "modal_html": modal.evaluate("el => el.outerHTML")
+                            if modal
+                            else "",
+                        }
+                    )
+
+                    # Cerrar el modal
+                    close_btn = modal.locator("button.btn-close")
+                    if close_btn.count() > 0:
+                        close_btn.first.click()
+                    else:
+                        # Alternativa: presionar Escape
+                        page.keyboard.press("Escape")
+                    # Esperar a que el modal desaparezca para evitar overlay sobre siguientes clicks
+                    page.wait_for_selector(
+                        "div.modal.show", state="hidden", timeout=8000
+                    )
+                    time.sleep(0.3)
+                except Exception as e:
+                    print(
+                        f"⚠️  Error procesando producto {idx + 1} en página {page_num}: {e}"
+                    )
+                    # Intentar cerrar modal si quedó abierto
+                    try:
+                        page.keyboard.press("Escape")
+                    except Exception:
+                        pass
+                    time.sleep(0.5)
+
+            # Verificar si hay una página siguiente
+            next_locator = page.locator("li.next:not(.disabled) a")
+            if next_locator.count() > 0:
+                print("➡️  Avanzando a la página siguiente...")
+                next_locator.first.click()
+                # Esperar a que se carguen los nuevos productos
+                page.wait_for_selector("article[data-key]", timeout=15000)
+                page_num += 1
+            else:
+                print("✅ No hay más páginas. Finalizando extracción.")
+                break
 
         # Guardar resultados en un DataFrame
         df = pd.DataFrame(productos)
