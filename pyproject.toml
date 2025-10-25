@@ -1,0 +1,13 @@
+[project]
+name = "kairos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.12.2",
+    "pandas>=2.3.3",
+    "playwright>=1.55.0",
+    "unicode>=2.9",
+    "unidecode>=1.4.0",
+]
