@@ -7,6 +7,8 @@ from playwright.sync_api import Playwright, sync_playwright
 import time
 import pandas as pd
 import re
+from bs4 import BeautifulSoup
+from typing import Any
 
 
 def parse_nutrition_table(modal) -> dict:
@@ -136,13 +138,13 @@ def run_simple_automation(playwright: Playwright) -> None:
         # Usar Locator para evitar problemas de elementos "detached"
         items_locator = page.locator("article[data-key]")
         items_count = items_locator.count()
-        print(f"🔎 Se encontraron {items_count} productos.")
+        print(f"🔎 Se encontraron {items_count} productos. Procesando los primeros 4.")
 
         productos: list[dict[str, str]] = []
 
-        for idx in range(items_count):
+        for idx in range(min(8, items_count)):
             try:
-                print(f"➡️  Procesando producto {idx + 1}/{items_count}")
+                print(f"➡️  Procesando producto {idx + 1}/{min(8, items_count)}")
                 article_nth = items_locator.nth(idx)
                 # Click en el card interno (zona clickeable)
                 clickable = article_nth.locator("div.vademecum-item-card")
@@ -209,6 +211,13 @@ def run_simple_automation(playwright: Playwright) -> None:
                         except Exception:
                             tabla = ""
 
+                # Guardar el HTML completo del modal para parseo posterior
+                modal_html = modal.evaluate("el => el.outerHTML") if modal else ""
+
+                # Guardar el archivo debug para tests
+                with open(f"debug_modal_{idx}.html", "w", encoding="utf-8") as f:
+                    f.write(modal_html)
+
                 productos.append(
                     {
                         "titulo": titulo,
@@ -219,9 +228,7 @@ def run_simple_automation(playwright: Playwright) -> None:
                         "fuente": fuente,
                         "tabla_nutricional": tabla,
                         # Guardar el HTML completo del modal para parseo posterior
-                        "modal_html": modal.evaluate("el => el.outerHTML")
-                        if modal
-                        else "",
+                        "modal_html": modal_html,
                     }
                 )
 
@@ -258,6 +265,117 @@ def run_simple_automation(playwright: Playwright) -> None:
         print("🧹 Cerrando navegador...")
         context.close()
         browser.close()
+
+
+def parse_modal_html(html: str) -> dict[str, Any]:
+    soup = BeautifulSoup(html, "html.parser")
+    result = {
+        "GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)": "",
+        "MARCA": "",
+        "DENOMINACIÓN DE VENTA": "",
+        "CANTIDAD PORCIÓN (g)": "",
+        "VALOR ENERGÉTICO (Kcal/ porción)": "",
+        "CARBOHIDRATOS (g/porción)": "",
+        "AZÚCARES TOTALES  (g/ porción)": "",
+        "AZÚCARES AÑADIDOS (g/ porción)": "",
+        "PROTEÍNAS  (g/ porción)": "",
+        "GRASAS TOTALES (g/ porción)": "",
+        "GRASAS SATURADAS (g/ porción)": "",
+        "GRASAS TRANS (g/ porción)": "",
+        "GRASAS MONOINSATURADAS (g/ porción)": "",
+        "GRASAS POLINSATURADAS (g/ porción)": "",
+        "COLESTEROL (g/ porción)": "",
+        "FIBRA ALIMENTARIA  (g/ porción)": "",
+        "SODIO  (mg/ porción)": "",
+        "Ingredientes": "",
+        "Actualizado": "",
+        "Fuente": "",
+    }
+
+    # Title
+    title_elem = soup.find("h5", class_="modal-title")
+    if title_elem:
+        title = title_elem.get_text().strip()
+        if " - " in title:
+            name, marca = title.split(" - ", 1)
+        else:
+            # assume last word is marca
+            parts = title.rsplit(" ", 1)
+            if len(parts) == 2:
+                name, marca = parts
+            else:
+                name = title
+                marca = ""
+        result["GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)"] = name.strip()
+        result["MARCA"] = marca.strip()
+
+    # Description
+    desc_elem = soup.find("div", id="vademecum-item-content")
+    if desc_elem:
+        p = desc_elem.find("p")
+        if p:
+            result["DENOMINACIÓN DE VENTA"] = p.get_text().strip()
+
+    # Ingredientes, Actualizado, Fuente
+    for p in soup.find_all("p"):
+        text = p.get_text()
+        if "INGREDIENTES:" in text:
+            result["Ingredientes"] = re.sub(
+                r"\s+", " ", text.replace("INGREDIENTES:", "").strip()
+            )
+        elif "Actualizado:" in text:
+            result["Actualizado"] = text.replace("Actualizado:", "").strip()
+        elif "Fuente:" in text:
+            result["Fuente"] = text.replace("Fuente:", "").strip()
+
+    # Portion
+    portion_p = None
+    for p in soup.find_all("p"):
+        if "Porción" in p.get_text():
+            portion_p = p
+            break
+    if portion_p:
+        m = re.search(r"Porción[:\s]*(\d+)\s*g", portion_p.get_text())
+        if m:
+            result["CANTIDAD PORCIÓN (g)"] = int(m.group(1))
+
+    # Table
+    for p in soup.find_all("p", class_="valor-nutricional"):
+        text = p.get_text().strip()
+        # normalize
+        text = re.sub(r"\s+", " ", text)
+        m = re.search(
+            r"([A-Za-zÁÉÍÓÚáéíóúÑñ\s]+?)\s+(\d+(?:[.,]\d+)?)\s*(kcal|g|mg)?",
+            text,
+            re.IGNORECASE,
+        )
+        if m:
+            nut_name = m.group(1).strip().lower()
+            val_str = m.group(2).replace(",", ".")
+            try:
+                val = float(val_str) if "." in val_str else int(val_str)
+            except Exception:
+                val = val_str
+            mapping = {
+                "valor energético": "VALOR ENERGÉTICO (Kcal/ porción)",
+                "carbohidratos": "CARBOHIDRATOS (g/porción)",
+                "azúcares": "AZÚCARES TOTALES  (g/ porción)",
+                "azúcares añadidos": "AZÚCARES AÑADIDOS (g/ porción)",
+                "proteínas": "PROTEÍNAS  (g/ porción)",
+                "grasas totales": "GRASAS TOTALES (g/ porción)",
+                "grasas saturadas": "GRASAS SATURADAS (g/ porción)",
+                "grasas trans": "GRASAS TRANS (g/ porción)",
+                "grasas monoinsaturadas": "GRASAS MONOINSATURADAS (g/ porción)",
+                "grasas poliinsaturadas": "GRASAS POLINSATURADAS (g/ porción)",
+                "colesterol": "COLESTEROL (g/ porción)",
+                "fibra": "FIBRA ALIMENTARIA  (g/ porción)",
+                "fibra alimentaria": "FIBRA ALIMENTARIA  (g/ porción)",
+                "sodio": "SODIO  (mg/ porción)",
+            }
+            if nut_name in mapping:
+                result[mapping[nut_name]] = val
+
+    return result
 
 
 if __name__ == "__main__":
