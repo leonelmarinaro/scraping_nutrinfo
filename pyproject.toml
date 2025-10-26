@@ -9,6 +9,7 @@ dependencies = [
     "lxml>=6.0.2",
     "pandas>=2.3.3",
     "playwright>=1.55.0",
+    "pytest>=8.4.2",
     "unicode>=2.9",
     "unidecode>=1.4.0",
 ]

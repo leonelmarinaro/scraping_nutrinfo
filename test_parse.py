@@ -1,0 +1,136 @@
+"""
+Tests para el parseo de modal HTML.
+Completa los diccionarios 'expected' con los valores correctos que deberían extraerse de cada modal.
+Ejecuta con: python test_parse.py
+"""
+
+import json
+from simple_automation import parse_modal_html
+
+
+def test_parse_0():
+    with open("debug_modal_0.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    parsed = parse_modal_html(html)
+    expected = {
+        "GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)": "Bizcochos Salados Tradicionales Libre de Gluten",
+        "MARCA": "Delicel",
+        "DENOMINACIÓN DE VENTA": "Bizcocho salado libre de gluten con aromatizante idéntico al natural sabor pan. Contenido graso 17%",
+        "CANTIDAD PORCIÓN (g)": 30,
+        "VALOR ENERGÉTICO (Kcal/ porción)": 129,
+        "CARBOHIDRATOS (g/porción)": 20,
+        "AZÚCARES TOTALES  (g/ porción)": 0.8,
+        "AZÚCARES AÑADIDOS (g/ porción)": "",
+        "PROTEÍNAS  (g/ porción)": 0.7,
+        "GRASAS TOTALES (g/ porción)": 5.1,
+        "GRASAS SATURADAS (g/ porción)": 2.2,
+        "GRASAS TRANS (g/ porción)": 0,
+        "GRASAS MONOINSATURADAS (g/ porción)": "",
+        "GRASAS POLINSATURADAS (g/ porción)": "",
+        "COLESTEROL (g/ porción)": "",
+        "FIBRA ALIMENTARIA  (g/ porción)": 0.2,
+        "SODIO  (mg/ porción)": 242,
+        "Ingredientes": "Harina de arroz, almidón de maíz, aceite vegetal interesterificado, fécula de mandioca, glucosa, sal, leudantes químicos INS 503ii, INS 500ii, INS 341i), emulsionante (INS 471), estabilizante (INS 415), aromatizante idéntico al natural pan, colorante natural (INS 160b).",
+        "Actualizado": "26-07-2025",
+        "Fuente": "Rótulo",
+    }
+    assert parsed == expected, f"Parsed: {parsed}\nExpected: {expected}"
+
+
+def test_parse_1():
+    with open("debug_modal_1.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    parsed = parse_modal_html(html)
+    expected = {
+        "GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)": "Galletitas Crackers Mix de Semillas",
+        "MARCA": "Shiva",
+        "DENOMINACIÓN DE VENTA": "Galletitas snack libre de gluten",
+        "CANTIDAD PORCIÓN (g)": 30,
+        "VALOR ENERGÉTICO (Kcal/ porción)": 129,
+        "CARBOHIDRATOS (g/porción)": 20,
+        "AZÚCARES TOTALES  (g/ porción)": 0.4,
+        "AZÚCARES AÑADIDOS (g/ porción)": "",
+        "PROTEÍNAS  (g/ porción)": 2.9,
+        "GRASAS TOTALES (g/ porción)": 4.2,
+        "GRASAS SATURADAS (g/ porción)": 1.4,
+        "GRASAS TRANS (g/ porción)": 0,
+        "GRASAS MONOINSATURADAS (g/ porción)": "",
+        "GRASAS POLINSATURADAS (g/ porción)": "",
+        "COLESTEROL (g/ porción)": "",
+        "FIBRA ALIMENTARIA  (g/ porción)": 1,
+        "SODIO  (mg/ porción)": 89,
+        "Ingredientes": "Harina de arroz integral, fécula de mandioca, semillas de girasol peladas, lino dorado molido, aceite de coco, semillas de sésamo integral, aceite de girasol, sal fina modificad en sodio, masa madre de harina de arroz, ANT: tocoferoles.",
+        "Actualizado": "26-07-2025",
+        "Fuente": "Rótulo",
+    }
+    assert parsed == expected, f"Parsed: {parsed}\nExpected: {expected}"
+
+
+def test_parse_2():
+    with open("debug_modal_2.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    parsed = parse_modal_html(html)
+    expected = {
+        "GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)": "Galletitas Dulces con Avena y Pasas",
+        "MARCA": "Frutigran",
+        "DENOMINACIÓN DE VENTA": "Galletitas dulces con avena y pasas",
+        "CANTIDAD PORCIÓN (g)": 30,
+        "VALOR ENERGÉTICO (Kcal/ porción)": 131,
+        "CARBOHIDRATOS (g/porción)": 21,
+        "AZÚCARES TOTALES  (g/ porción)": "",
+        "AZÚCARES AÑADIDOS (g/ porción)": "",
+        "PROTEÍNAS  (g/ porción)": 5.1,
+        "GRASAS TOTALES (g/ porción)": 4.2,
+        "GRASAS SATURADAS (g/ porción)": 0.5,
+        "GRASAS TRANS (g/ porción)": 0,
+        "GRASAS MONOINSATURADAS (g/ porción)": 3.3,
+        "GRASAS POLINSATURADAS (g/ porción)": 0.4,
+        "COLESTEROL (g/ porción)": "",
+        "FIBRA ALIMENTARIA  (g/ porción)": 1.2,
+        "SODIO  (mg/ porción)": 81,
+        "Ingredientes": "harina de trigo enriquecida Ley Nº 25.630, aceite de girasol de alto oleico, pasas de uva, avena arrollada, azúcar, almidon de maíz, harina integral, fibra soluble, jarabe de maíz, sal, emulsionante (monoglicéridos de ácidos grasos), regulador de la acidez (bicarbonato de sodio), saborizante natural vainilla, aromatizantes naturales melaza y manteca, leudante químico (bicarbonato de amonio), antioxidante (tocoferoles).",
+        "Actualizado": "30-06-2025",
+        "Fuente": "Página web empresa oficial",
+    }
+    assert parsed == expected, f"Parsed: {parsed}\nExpected: {expected}"
+
+
+def test_parse_3():
+    with open("debug_modal_3.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    parsed = parse_modal_html(html)
+    expected = {
+        "GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)": "Galletitas Dulces con Avena y Pasas",
+        "MARCA": "Frutigran",
+        "DENOMINACIÓN DE VENTA": "Galletitas dulces con avena y pasas de uva.",
+        "CANTIDAD PORCIÓN (g)": 39,
+        "VALOR ENERGÉTICO (Kcal/ porción)": 169,
+        "CARBOHIDRATOS (g/porción)": 27,
+        "AZÚCARES TOTALES  (g/ porción)": "",
+        "AZÚCARES AÑADIDOS (g/ porción)": "",
+        "PROTEÍNAS  (g/ porción)": 2.9,
+        "GRASAS TOTALES (g/ porción)": 5.5,
+        "GRASAS SATURADAS (g/ porción)": 0.6,
+        "GRASAS TRANS (g/ porción)": 0,
+        "GRASAS MONOINSATURADAS (g/ porción)": 4.3,
+        "GRASAS POLINSATURADAS (g/ porción)": 0.5,
+        "COLESTEROL (g/ porción)": 0,
+        "FIBRA ALIMENTARIA  (g/ porción)": 1.6,
+        "SODIO  (mg/ porción)": 105,
+        "Ingredientes": "harina de trigo enriquecida Ley Nº 25.630, aceite de girasol de alto oleico, pasas de uva, avena arrollada, azúcar, almidon de maíz, harina integral, fibra soluble, jarabe de maíz, sal, emulsionante (monoglicéridos de ácidos grasos), regulador de la acidez (bicarbonato de sodio), saborizante natural vainilla, aromatizantes naturales melaza y manteca, leudante químico (bicarbonato de amonio), antioxidante (tocoferoles).",
+        "Actualizado": "30-06-2025",
+        "Fuente": "Empresa",
+    }
+    assert parsed == expected, f"Parsed: {parsed}\nExpected: {expected}"
+
+
+if __name__ == "__main__":
+    test_parse_0()
+    print("test_parse_0 passed")
+    test_parse_1()
+    print("test_parse_1 passed")
+    test_parse_2()
+    print("test_parse_2 passed")
+    test_parse_3()
+    print("test_parse_3 passed")
+    print("All tests passed!")
