@@ -159,7 +159,7 @@ def test_parse_5():
     parsed = parse_modal_html(html)
     expected = {
         "GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)": "Galleta Horneada de Vainilla",
-        "MARCA": "Golsfish",
+        "MARCA": "Goldfish",
         "DENOMINACIÓN DE VENTA": "Galleta horneada de vainilla.",
         "CANTIDAD PORCIÓN (g)": 100,
         "VALOR ENERGÉTICO (Kcal/ porción)": 444,
@@ -193,8 +193,8 @@ def test_parse_6():
         "CANTIDAD PORCIÓN (g)": 100,
         "VALOR ENERGÉTICO (Kcal/ porción)": 455,
         "CARBOHIDRATOS (g/porción)": 66,
-        "AZÚCARES TOTALES  (g/ porción)": "1.7",
-        "AZÚCARES AÑADIDOS (g/ porción)": "0.7",
+        "AZÚCARES TOTALES  (g/ porción)": 1.7,
+        "AZÚCARES AÑADIDOS (g/ porción)": 0.7,
         "PROTEÍNAS  (g/ porción)": 10,
         "GRASAS TOTALES (g/ porción)": 16,
         "GRASAS SATURADAS (g/ porción)": 3.4,

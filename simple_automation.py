@@ -307,7 +307,10 @@ def parse_modal_html(html: str) -> dict[str, Any]:
                 name = title
                 marca = ""
         result["GALLETITAS CON GLUTEN (NOMBRE COMERCIAL)"] = name.strip()
-        result["MARCA"] = marca.strip()
+        result["MARCA"] = marca.strip(".").strip()
+        # Corrección de errores comunes en el HTML
+        if result["MARCA"] == "Golsfish":
+            result["MARCA"] = "Goldfish"
 
     # Description
     desc_elem = soup.find("div", id="vademecum-item-content")
@@ -340,40 +343,54 @@ def parse_modal_html(html: str) -> dict[str, Any]:
             result["CANTIDAD PORCIÓN (g)"] = int(m.group(1))
 
     # Table
-    for p in soup.find_all("p", class_="valor-nutricional"):
-        text = p.get_text().strip()
-        # normalize
-        text = re.sub(r"\s+", " ", text)
-        m = re.search(
-            r"([A-Za-zÁÉÍÓÚáéíóúÑñ\s]+?)\s+(\d+(?:[.,]\d+)?)\s*(kcal|g|mg)?",
-            text,
-            re.IGNORECASE,
-        )
-        if m:
-            nut_name = m.group(1).strip().lower()
-            val_str = m.group(2).replace(",", ".")
-            try:
-                val = float(val_str) if "." in val_str else int(val_str)
-            except Exception:
-                val = val_str
-            mapping = {
-                "valor energético": "VALOR ENERGÉTICO (Kcal/ porción)",
-                "carbohidratos": "CARBOHIDRATOS (g/porción)",
-                "azúcares": "AZÚCARES TOTALES  (g/ porción)",
-                "azúcares añadidos": "AZÚCARES AÑADIDOS (g/ porción)",
-                "proteínas": "PROTEÍNAS  (g/ porción)",
-                "grasas totales": "GRASAS TOTALES (g/ porción)",
-                "grasas saturadas": "GRASAS SATURADAS (g/ porción)",
-                "grasas trans": "GRASAS TRANS (g/ porción)",
-                "grasas monoinsaturadas": "GRASAS MONOINSATURADAS (g/ porción)",
-                "grasas poliinsaturadas": "GRASAS POLINSATURADAS (g/ porción)",
-                "colesterol": "COLESTEROL (g/ porción)",
-                "fibra": "FIBRA ALIMENTARIA  (g/ porción)",
-                "fibra alimentaria": "FIBRA ALIMENTARIA  (g/ porción)",
-                "sodio": "SODIO  (mg/ porción)",
-            }
-            if nut_name in mapping:
-                result[mapping[nut_name]] = val
+    table = soup.find("table")
+    if table:
+        rows = table.find_all("tr")
+        for row in rows:
+            tds = row.find_all("td")
+            if len(tds) == 2:
+                left = tds[0].get_text().strip()
+                right = tds[1].get_text().strip()
+                # normalize
+                left = re.sub(r"\s+", " ", left)
+                right = re.sub(r"\s+", " ", right)
+                # extract name from left, remove "de las cuales:" if present
+                name_part = left.split("de las cuales:")[0].strip()
+                # text = name_part + " " + right
+                text = name_part + " " + right
+                # parse
+                m = re.search(
+                    r"([A-Za-zÁÉÍÓÚáéíóúÑñ\s]+?)\s+(\d+(?:[.,]\d+)?)\s*(kcal|g|mg)?",
+                    text,
+                    re.IGNORECASE,
+                )
+                if m:
+                    nut_name = m.group(1).strip().lower()
+                    val_str = m.group(2).replace(",", ".")
+                    try:
+                        val = float(val_str) if "." in val_str else int(val_str)
+                    except Exception:
+                        val = val_str
+                    mapping = {
+                        "valor energético": "VALOR ENERGÉTICO (Kcal/ porción)",
+                        "carbohidratos": "CARBOHIDRATOS (g/porción)",
+                        "hidratos de carbono disponibles": "CARBOHIDRATOS (g/porción)",
+                        "azúcares": "AZÚCARES TOTALES  (g/ porción)",
+                        "azucares": "AZÚCARES TOTALES  (g/ porción)",
+                        "azúcares añadidos": "AZÚCARES AÑADIDOS (g/ porción)",
+                        "azucares añadidos": "AZÚCARES AÑADIDOS (g/ porción)",
+                        "proteínas": "PROTEÍNAS  (g/ porción)",
+                        "grasas totales": "GRASAS TOTALES (g/ porción)",
+                        "grasas saturadas": "GRASAS SATURADAS (g/ porción)",
+                        "grasas trans": "GRASAS TRANS (g/ porción)",
+                        "grasas monoinsaturadas": "GRASAS MONOINSATURADAS (g/ porción)",
+                        "grasas poliinsaturadas": "GRASAS POLINSATURADAS (g/ porción)",
+                        "colesterol": "COLESTEROL (g/ porción)",
+                        "fibra": "FIBRA ALIMENTARIA  (g/ porción)",
+                        "sodio": "SODIO  (mg/ porción)",
+                    }
+                    if nut_name in mapping:
+                        result[mapping[nut_name]] = val
 
     return result
 
